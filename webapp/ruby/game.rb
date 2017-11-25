@@ -2,6 +2,7 @@ require 'concurrent-edge'
 require 'faye/websocket'
 require 'json'
 require 'mysql2'
+require 'pry'
 
 class Game
   module Jsonable
@@ -107,9 +108,10 @@ class Game
         conn.close
       end
 
-      set_global_mitems
     end
 
+    set_global_mitems
+    p $m_items
     def set_global_mitems
       $m_items = conn.query('SELECT * FROM m_item').map do |raw_item|
         [
@@ -484,10 +486,10 @@ class Game
 
     def connect_db
       Mysql2::Client.new(
-        host: ENV.fetch('ISU_DB_HOST') { '127.0.0.1' },
+        host: 'app0294',
         port: ENV.fetch('ISU_DB_PORT') { '3306' },
-        username: ENV.fetch('ISU_DB_USER') { 'root' },
-        password: ENV.fetch('ISU_DB_PASSWORD') { '' },
+        username: 'isucon',
+        password: 'isucon',
         database: 'isudb',
         encoding: 'utf8mb4'
       )
