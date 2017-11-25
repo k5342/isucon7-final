@@ -1,8 +1,13 @@
 require 'erb'
 require 'sinatra/base'
 require './game'
+require 'rack-lineprof'
+require 'logger'
 
 class App < Sinatra::Base
+  logger = Logger.new('/var/log/lineprof.log')
+  use Rack::Lineprof, profile: 'game.rb', logger: logger # 基本的にはコメントアウトしておく
+
   use Game
 
   configure do

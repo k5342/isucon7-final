@@ -460,10 +460,10 @@ class Game
 
     def connect_db
       Mysql2::Client.new(
-        host: ENV.fetch('ISU_DB_HOST') { '127.0.0.1' },
+        host: 'app0294',
         port: ENV.fetch('ISU_DB_PORT') { '3306' },
-        username: ENV.fetch('ISU_DB_USER') { 'root' },
-        password: ENV.fetch('ISU_DB_PASSWORD') { '' },
+        username: 'isucon',
+        password: 'isucon',
         database: 'isudb',
         encoding: 'utf8mb4'
       )
