@@ -311,7 +311,6 @@ class Game
         # items = conn.query('SELECT * FROM m_item', symbolize_keys: true).map do |mitem|
         #   MItem.new(mitem)
         # end
-        $m_items ||= set_global_mitems
         items = $m_items.values
         items.each do |item|
           mitems[item.item_id] = item
