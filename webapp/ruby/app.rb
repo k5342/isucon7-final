@@ -16,7 +16,7 @@ class App < Sinatra::Base
 
   def initialize
     super 
-    set_global_mitems
+    Game.set_global_mitems
   end
 
   get '/initialize' do
