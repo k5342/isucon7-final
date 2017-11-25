@@ -93,10 +93,35 @@ class Game
       s * t
     end
   end
+  
+  class RoomStatus
+    def initialize
+      @room = {}
+    end
+    
+    def set(room_name, key, value)
+      @room[room_name] ||= {}
+      @room[room_name][key] = value
+    end
+    
+    def get(room_name, key)
+      @room[room_name] ||= {}
+      @room[room_name][key] || 0
+    end
+    
+    def add(room_name, key, value)
+      @room[room_name] ||= {}
+      @room[room_name][key] ||= 0
+      @room[room_name][key] += value
+    end
+  end
 
   class << self
     def initialize!
       conn = connect_db
+      
+      @@room = RoomStatus.new
+      
       begin
         conn.query('TRUNCATE TABLE adding')
         conn.query('TRUNCATE TABLE buying')
@@ -210,19 +235,19 @@ class Game
           return false
         end
 
-        total_milli_isu = 0
-        statement = conn.prepare('SELECT isu FROM adding WHERE room_name = ? AND time <= ?')
-        addings = statement.execute(room_name, req_time).map do |raw_adding|
+        total_milli_isu_diff = 0
+        statement = conn.prepare('SELECT isu FROM adding WHERE room_name = ? AND time <= ? AND time > ?')
+        addings = statement.execute(room_name, req_time, last_process_time).map do |raw_adding|
           Adding.new(room_name, req_time, raw_adding['isu'])
         end
         statement.close
 
         addings.each do |a|
-          total_milli_isu += str2big(a.isu) * 1000
+          total_milli_isu_diff += str2big(a.isu) * 1000
         end
-
-        statement = conn.prepare('SELECT item_id, ordinal, time FROM buying WHERE room_name = ?')
-        buyings = statement.execute(room_name).map do |raw_buying|
+        
+        statement = conn.prepare('SELECT item_id, ordinal, time FROM buying WHERE room_name = ? AND time <= ? AND time > ?')
+        buyings = statement.execute(room_name, req_time, @@room.get(room_name, 'last_process_time')).map do |raw_buying|
           Buying.new(room_name, raw_buying['item_id'], raw_buying['ordinal'], raw_buying['time'])
         end
         statement.close
@@ -244,13 +269,14 @@ class Game
           end.first
           statement.close
           cost = item.get_price(b.ordinal) * 1000
-          total_milli_isu -= cost
+          total_milli_isu_diff -= cost
           if b.time <= req_time
             gain = item.get_power(b.ordinal) * (req_time - b.time)
-            total_milli_isu += gain
+            total_milli_isu_diff += gain
           end
         end
 
+        # 本当に買えるか調べる
         statement = conn.prepare('SELECT * FROM m_item WHERE item_id = ?')
         item = statement.execute(item_id).map do |raw_item|
           MItem.new(
@@ -267,15 +293,19 @@ class Game
         end.first
         statement.close
         need = item.get_price(count_bought + 1) * 1000
-        if total_milli_isu < need
+        if @@room.get(room_name, 'total_milli_isu') + total_milli_isu_diff < need
           puts 'not enough'
           conn.query('ROLLBACK')
           return false
         end
-
+        
+        # 購入しちゃう
         statement = conn.prepare('INSERT INTO buying(room_name, item_id, ordinal, time) VALUES(?, ?, ?, ?)')
         statement.execute(room_name, item_id, count_bought + 1, req_time)
         statement.close
+        
+        @@room.add(room_name, 'total_milli_isu', total_milli_isu_diff)
+        @@room.set(room_name, 'last_process_time', req_time)
       rescue => e
         puts "fail to buy item id=#{item_id} bought=#{count_bought} time=#{req_time}"
         conn.query('ROLLBACK')
