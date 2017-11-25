@@ -120,8 +120,6 @@ class Game
     def initialize!
       conn = connect_db
       
-      @@room = RoomStatus.new
-      
       begin
         conn.query('TRUNCATE TABLE adding')
         conn.query('TRUNCATE TABLE buying')
@@ -237,7 +235,7 @@ class Game
 
         total_milli_isu_diff = 0
         statement = conn.prepare('SELECT isu FROM adding WHERE room_name = ? AND time <= ? AND time > ?')
-        addings = statement.execute(room_name, req_time, last_process_time).map do |raw_adding|
+        addings = statement.execute(room_name, req_time, @@room.get(room_name, 'last_process_time')).map do |raw_adding|
           Adding.new(room_name, req_time, raw_adding['isu'])
         end
         statement.close
@@ -308,6 +306,8 @@ class Game
         @@room.set(room_name, 'last_process_time', req_time)
       rescue => e
         puts "fail to buy item id=#{item_id} bought=#{count_bought} time=#{req_time}"
+        p e
+        puts e.backtrace
         conn.query('ROLLBACK')
         #conn.close
         false
@@ -508,10 +508,12 @@ class Game
     return @app.call(env) unless websocket?(env)
 
     ws = Faye::WebSocket.new(env)
+    
+    @@room = RoomStatus.new
 
     path = env['PATH_INFO']
     room_name = path[4, path.length - 4]
-
+    
     status = self.class.get_status(room_name)
     ws.send(status.to_json)
 
