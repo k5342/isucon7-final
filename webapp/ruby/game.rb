@@ -104,7 +104,7 @@ class Game
       rescue => e
         puts e.message
       else
-        conn.close
+        #conn.close
       end
     end
 
@@ -183,11 +183,11 @@ class Game
       rescue => e
         puts "fail to add isu: room=#{room_name} time=#{req_time} isu=#{req_isu}"
         conn.query('ROLLBACK')
-        conn.close
+        #conn.close
         false
       else
         conn.query('COMMIT')
-        conn.close
+        #conn.close
         true
       end
     end
@@ -279,11 +279,11 @@ class Game
       rescue => e
         puts "fail to buy item id=#{item_id} bought=#{count_bought} time=#{req_time}"
         conn.query('ROLLBACK')
-        conn.close
+        #conn.close
         false
       else
         conn.query('COMMIT')
-        conn.close
+        #conn.close
         true
       end
     end
@@ -319,7 +319,7 @@ class Game
         puts e.message
         puts e.backtrace.join("\n")
         conn.query('ROLLBACK')
-        conn.close
+        #conn.close
         nil
       else
         conn.query('COMMIT')
@@ -329,7 +329,7 @@ class Game
         # calcStatusに時間がかかる可能性があるので タイムスタンプを取得し直す
         latest_time = get_current_time(conn)
 
-        conn.close
+        #conn.close
 
         status.time = latest_time
         status
