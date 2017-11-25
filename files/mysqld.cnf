@@ -45,7 +45,7 @@ bind-address		= 0.0.0.0
 # * Fine Tuning
 #
 key_buffer_size		= 16M
-max_allowed_packet	= 16M
+max_allowed_packet	= 1G 
 thread_stack		= 192K
 thread_cache_size       = 8
 # This replaces the startup script and checks MyISAM tables if needed
@@ -54,11 +54,16 @@ myisam-recover-options  = BACKUP
 #max_connections        = 100
 #table_cache            = 64
 #thread_concurrency     = 10
+
+# of RAM but beware of setting memory usage too high
+innodb_buffer_pool_size = 1.5G
+
 #
 # * Query Cache Configuration
 #
 query_cache_limit	= 1M
-query_cache_size        = 16M
+query_cache_size    = 32M
+query_cache_type	= ON
 #
 # * Logging and Replication
 #
