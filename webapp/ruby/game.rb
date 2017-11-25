@@ -110,6 +110,26 @@ class Game
 
     end
 
+    def set_global_mitems
+      $m_items = connect_db.query('SELECT * FROM m_item').map do |raw_item|
+        [
+          raw_item['item_id'].to_s, 
+          MItem.new(
+            item_id: raw_item['item_id'],
+            power1: raw_item['power1'],
+            power2: raw_item['power2'],
+            power3: raw_item['power3'],
+            power4: raw_item['power4'],
+            price1: raw_item['price1'],
+            price2: raw_item['price2'],
+            price3: raw_item['price3'],
+            price4: raw_item['price4'],
+          )
+        ].to_h
+      end
+    end
+
+
     def str2big(s)
       s.to_i
     end
