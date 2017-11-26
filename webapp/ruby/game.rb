@@ -106,7 +106,16 @@ class Game
       else
         #conn.close
       end
+
     end
+
+    def set_global_mitems
+      $m_items = {}
+      connect_db.query('SELECT * FROM m_item', symbolize_keys: true).each do |raw_item|
+        $m_items[raw_item[:item_id].to_s] = MItem.new(raw_item)
+      end
+    end
+
 
     def str2big(s)
       s.to_i
@@ -228,21 +237,22 @@ class Game
         statement.close
 
         buyings.each do |b|
-          statement = conn.prepare('SELECT * FROM m_item WHERE item_id = ?')
-          item = statement.execute(b.item_id).map do |raw_item|
-            MItem.new(
-              item_id: raw_item['item_id'],
-              power1: raw_item['power1'],
-              power2: raw_item['power2'],
-              power3: raw_item['power3'],
-              power4: raw_item['power4'],
-              price1: raw_item['price1'],
-              price2: raw_item['price2'],
-              price3: raw_item['price3'],
-              price4: raw_item['price4'],
-            )
-          end.first
-          statement.close
+          # statement = conn.prepare('SELECT * FROM m_item WHERE item_id = ?')
+          # item = statement.execute(b.item_id).map do |raw_item|
+          #   MItem.new(
+          #     item_id: raw_item['item_id'],
+          #     power1: raw_item['power1'],
+          #     power2: raw_item['power2'],
+          #     power3: raw_item['power3'],
+          #     power4: raw_item['power4'],
+          #     price1: raw_item['price1'],
+          #     price2: raw_item['price2'],
+          #     price3: raw_item['price3'],
+          #     price4: raw_item['price4'],
+          #   )
+          # end.first
+          # statement.close
+          item = $m_items[b.item_id.to_s]
           cost = item.get_price(b.ordinal) * 1000
           total_milli_isu -= cost
           if b.time <= req_time
@@ -251,21 +261,22 @@ class Game
           end
         end
 
-        statement = conn.prepare('SELECT * FROM m_item WHERE item_id = ?')
-        item = statement.execute(item_id).map do |raw_item|
-          MItem.new(
-            item_id: raw_item['item_id'],
-            power1: raw_item['power1'],
-            power2: raw_item['power2'],
-            power3: raw_item['power3'],
-            power4: raw_item['power4'],
-            price1: raw_item['price1'],
-            price2: raw_item['price2'],
-            price3: raw_item['price3'],
-            price4: raw_item['price4'],
-          )
-        end.first
-        statement.close
+        # statement = conn.prepare('SELECT * FROM m_item WHERE item_id = ?')
+        # item = statement.execute(item_id).map do |raw_item|
+        #   MItem.new(
+        #     item_id: raw_item['item_id'],
+        #     power1: raw_item['power1'],
+        #     power2: raw_item['power2'],
+        #     power3: raw_item['power3'],
+        #     power4: raw_item['power4'],
+        #     price1: raw_item['price1'],
+        #     price2: raw_item['price2'],
+        #     price3: raw_item['price3'],
+        #     price4: raw_item['price4'],
+        #   )
+        # end.first
+        # statement.close
+        item = $m_items[item_id.to_s]
         need = item.get_price(count_bought + 1) * 1000
         if total_milli_isu < need
           puts 'not enough'
@@ -297,9 +308,10 @@ class Game
         current_time = update_room_time(conn, room_name, 0)
 
         mitems = {}
-        items = conn.query('SELECT * FROM m_item', symbolize_keys: true).map do |mitem|
-          MItem.new(mitem)
-        end
+        # items = conn.query('SELECT * FROM m_item', symbolize_keys: true).map do |mitem|
+        #   MItem.new(mitem)
+        # end
+        items = $m_items.values
         items.each do |item|
           mitems[item.item_id] = item
         end
@@ -460,10 +472,10 @@ class Game
 
     def connect_db
       Mysql2::Client.new(
-        host: ENV.fetch('ISU_DB_HOST') { '127.0.0.1' },
+        host: 'app0294',
         port: ENV.fetch('ISU_DB_PORT') { '3306' },
-        username: ENV.fetch('ISU_DB_USER') { 'root' },
-        password: ENV.fetch('ISU_DB_PASSWORD') { '' },
+        username: 'isucon',
+        password: 'isucon',
         database: 'isudb',
         encoding: 'utf8mb4'
       )

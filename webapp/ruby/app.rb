@@ -14,6 +14,11 @@ class App < Sinatra::Base
     register Sinatra::Reloader
   end
 
+  def initialize
+    super 
+    Game.set_global_mitems
+  end
+
   get '/initialize' do
     Game.initialize!
     204
